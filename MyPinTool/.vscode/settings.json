@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.ph": "cpp",
+        "iostream": "cpp"
+    }
+}

@@ -1,0 +1,6 @@
+===============================================
+This application is instrumented by MyPinTool
+See file tool.out for analysis results
+===============================================
+C: Tool (or Pin) caused signal 11 at PC 0x7fbb7dca40fb
+Segmentation fault (core dumped)
