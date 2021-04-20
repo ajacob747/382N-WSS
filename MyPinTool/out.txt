@@ -1,0 +1,3 @@
+peak_wss: 264576
+peak_cwss: 10496
+mem trace count: 570056453
