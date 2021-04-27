@@ -29,8 +29,11 @@ UINT64 memTraceCount = 0;
 UINT64 wss_count = 0;
 vector <UINT64> wss_vec;
 vector <UINT64> cwss_vec;
-UINT64 peak_wss=0;
-UINT64 peak_cwss=0;
+UINT64 wss_peak = 0;
+UINT64 cwss_peak = 0;
+UINT64 wss_acc = 0;
+UINT64 cwss_acc = 0;
+
 //UINT64 threadCount = 0;     //total number of threads, including main thread
 
 std::ostream * out = &cerr;
@@ -93,11 +96,11 @@ VOID wss(void * r1_addr, void* r2_addr, void * w_addr){
             wss_map.insert(make_pair(w_c_addr,1));
         }
     }
-    
     if(memTraceCount%10000000 == 0){
         wss_count = wss_map.size();
         wss_vec.push_back(wss_count*64);
-        peak_wss = (wss_count*64>peak_wss) ? wss_count*64:peak_wss; 
+        wss_peak = (wss_count*64>wss_peak) ? wss_count*64:wss_peak; 
+        wss_acc += wss_count*64;
         UINT64 cwss_count = 0;
         if(!first){
             for(const auto& pair_elem: wss_map){
@@ -106,7 +109,8 @@ VOID wss(void * r1_addr, void* r2_addr, void * w_addr){
                 }
             }
             cwss_vec.push_back(cwss_count*64);
-            peak_cwss = (cwss_count*64>peak_cwss) ? cwss_count*64:peak_cwss; 
+            cwss_peak = (cwss_count*64>cwss_peak) ? cwss_count*64:cwss_peak;
+            cwss_acc += cwss_count*64; 
         }
         first = false;
         wss_last_map = wss_map;
@@ -152,15 +156,17 @@ VOID Instruction(INS ins, VOID *v){
  */
 VOID Fini(INT32 code, VOID *v)
 {
-    //UINT64 peak_wss = *max_element(wss_vec.begin(), wss_vec.end());
-    //long double avg_wss = (long double)accumulate(wss_vec.begin(), wss_vec.end(),0)/(long double)wss_vec.size();
-    //UINT64 peak_cwss = *max_element(cwss_vec.begin(), cwss_vec.end());
-    //long double avg_cwss = (long double)accumulate(cwss_vec.begin(), cwss_vec.end(),0)/(long double)cwss_vec.size();
-    *out << "peak_wss: " << peak_wss << endl;
-    //*out << "avg_wss: " << avg_wss << endl;
-    *out << "peak_cwss: " << peak_cwss << endl;
+    double wss_avg = (wss_vec.size() > 0) ? (double)(wss_acc)/wss_vec.size() : 0;
+    double cwss_avg = (cwss_vec.size() > 0) ? (double)(cwss_acc)/cwss_vec.size() : 0;
+    *out << "peak wss: " << wss_peak << endl;
+    *out << "wss avg: " << wss_avg << endl;
+    *out << "peak cwss: " << cwss_peak << endl;
+    *out << "cwss avg: " << cwss_avg << endl;
     *out << "mem trace count: " << memTraceCount << endl;
-    //*out << "avg_cwss: " << avg_cwss << endl;
+    for(UINT32 i = 0; i<wss_vec.size(); i++){
+        *out << wss_vec[i] << endl;
+    }
+
 }
 
 /*!
