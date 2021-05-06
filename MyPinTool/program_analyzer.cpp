@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <numeric>
+#include <cmath>
 using std::cerr;
 using std::string;
 using std::endl;
@@ -74,10 +75,12 @@ INT32 Usage()
 
 bool first = true;
 
-VOID wss(void * r1_addr, void* r2_addr, void * w_addr){        
+VOID wss(void * r1_addr, void* r2_addr, void * w_addr){ 
+    //if(memTraceCount <30){       
     if(r1_addr != 0){
         memTraceCount++;
         void * r1_c_addr = (void*)((uintptr_t)(r1_addr)& 0xFFFFFFFFFFFFFFC0);
+        //cerr << r1_c_addr<<endl;
         if(wss_map.find(r1_c_addr)==wss_map.end()){
             wss_map.insert(make_pair(r1_c_addr,1));
         }
@@ -85,6 +88,7 @@ VOID wss(void * r1_addr, void* r2_addr, void * w_addr){
     if(r2_addr != 0){
         memTraceCount++;
         void * r2_c_addr = (void*)((uintptr_t)(r2_addr)& 0xFFFFFFFFFFFFFFC0);
+        //cerr << r2_c_addr<<endl;
         if(wss_map.find(r2_c_addr)==wss_map.end()){
             wss_map.insert(make_pair(r2_c_addr,1));
         }
@@ -92,11 +96,12 @@ VOID wss(void * r1_addr, void* r2_addr, void * w_addr){
     if(w_addr != 0){
         memTraceCount++;
         void * w_c_addr = (void*)((uintptr_t)(w_addr)& 0xFFFFFFFFFFFFFFC0);
+        //cerr << w_c_addr<<endl;
         if(wss_map.find(w_c_addr)==wss_map.end()){
             wss_map.insert(make_pair(w_c_addr,1));
         }
     }
-    if(memTraceCount%10000000 == 0){
+    if(memTraceCount%1000000000 == 0){
         wss_count = wss_map.size();
         wss_vec.push_back(wss_count*64);
         wss_peak = (wss_count*64>wss_peak) ? wss_count*64:wss_peak; 
@@ -116,6 +121,7 @@ VOID wss(void * r1_addr, void* r2_addr, void * w_addr){
         wss_last_map = wss_map;
         wss_map.clear();
     }
+    //}
 } 
 
 /* ===================================================================== */
@@ -158,10 +164,28 @@ VOID Fini(INT32 code, VOID *v)
 {
     double wss_avg = (wss_vec.size() > 0) ? (double)(wss_acc)/wss_vec.size() : 0;
     double cwss_avg = (cwss_vec.size() > 0) ? (double)(cwss_acc)/cwss_vec.size() : 0;
+    
+    double wss_std_sum = 0;
+    double cwss_std_sum = 0;
+    double wss_std = 0;
+    double cwss_std = 0;
+    
+    for (UINT i = 0; i<wss_vec.size(); i++){
+        wss_std_sum = wss_std_sum + pow((wss_vec[i] - wss_avg), 2);
+    }
+    for (UINT i = 0; i<cwss_vec.size(); i++){
+        cwss_std_sum = cwss_std_sum + pow((cwss_vec[i] - cwss_avg), 2);
+    }
+
+    wss_std = sqrt(wss_std_sum/wss_vec.size());
+    cwss_std = sqrt(cwss_std_sum/cwss_vec.size());
+
     *out << "peak wss: " << wss_peak << endl;
     *out << "wss avg: " << wss_avg << endl;
+    *out << "wss std: " << wss_std <<endl;
     *out << "peak cwss: " << cwss_peak << endl;
     *out << "cwss avg: " << cwss_avg << endl;
+    *out << "cwss std: " << cwss_std << endl;
     *out << "mem trace count: " << memTraceCount << endl;
     for(UINT32 i = 0; i<wss_vec.size(); i++){
         *out << wss_vec[i] << endl;
